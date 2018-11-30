@@ -1,0 +1,43 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+group = 'io.projectreactor'
+version = '0.0.1'
+
+dependencies {
+    api 'io.projectreactor:reactor-core:3.2.3.RELEASE'
+    api 'io.projectreactor.addons:reactor-extra:3.2.0.RELEASE'
+    api 'org.slf4j:slf4j-api:1.7.21'
+}
+
+repositories {
+    jcenter()
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allJava
+    classifier = 'sources'
+}
+
+task javadocJar(type: Jar) {
+    from javadoc
+    classifier = 'javadoc'
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+        }
+    }
+}
+
+javadoc {
+    if(JavaVersion.current().isJava9Compatible()) {
+        options.addBooleanOption('html5', true)
+    }
+}
