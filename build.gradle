@@ -6,6 +6,9 @@ plugins {
 group = 'io.projectreactor'
 version = '0.0.1'
 
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
 dependencies {
     api 'io.projectreactor:reactor-core:3.2.3.RELEASE'
     api 'io.projectreactor.addons:reactor-extra:3.2.0.RELEASE'
@@ -32,6 +35,15 @@ publishing {
             from components.java
             artifact sourcesJar
             artifact javadocJar
+        }
+    }
+    repositories {
+        maven {
+            url = version.endsWith('SNAPSHOT') ? 'https://artifactory.netifiinc.com/artifactory/libs-snapshot-local' : 'https://artifactory.netifiinc.com/artifactory/libs-release-local'
+            credentials {
+                username = project.findProperty('netifiArtifactoryUsername') ?: System.getenv('NETIFI_ARTIFACTORY_USERNAME')
+                password = project.findProperty('netifiArtifactoryPassword') ?: System.getenv('NETIFI_ARTIFACTORY_PASSWORD')
+            }
         }
     }
 }
