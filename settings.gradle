@@ -8,3 +8,5 @@
  */
 
 rootProject.name = 'reactor-pool'
+include 'core'
+include 'pool-r2dbc'

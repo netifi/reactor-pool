@@ -1,55 +1,72 @@
-plugins {
-    id 'java-library'
-    id 'maven-publish'
-}
+subprojects {
+    apply plugin: 'java-library'
 
-group = 'io.projectreactor'
-version = '0.0.1'
+    group = 'com.netifi.reactor.pool'
+    version = '0.0.1'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
 
-dependencies {
-    api 'io.projectreactor:reactor-core:3.2.3.RELEASE'
-    api 'io.projectreactor.addons:reactor-extra:3.2.0.RELEASE'
-    api 'org.slf4j:slf4j-api:1.7.21'
-}
+    ext {
+        r2dbcVersion = '1.0.0.M6'
+        reactorVersion = '3.2.5.RELEASE'
+        reactorExtraVersion = '3.2.2.RELEASE'
+        slf4jVersion = '1.7.25'
+        nettyVersion = '4.1.32.Final'
+        junitVersion = '5.3.2'
+        testcontainersVersion = '1.10.5'
+    }
 
-repositories {
-    jcenter()
-}
+    repositories {
+        mavenCentral()
+        maven {
+            url = 'https://repo.spring.io/milestone'
+        }
+        jcenter()
+    }
 
-task sourcesJar(type: Jar) {
-    from sourceSets.main.allJava
-    classifier = 'sources'
-}
+    dependencies {
+        api "org.slf4j:slf4j-api:$slf4jVersion"
+        testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
+        testImplementation "org.junit.jupiter:junit-jupiter-params:$junitVersion"
+        testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
+        testImplementation "io.projectreactor:reactor-test:$reactorVersion"
+    }
 
-task javadocJar(type: Jar) {
-    from javadoc
-    classifier = 'javadoc'
-}
+    task sourcesJar(type: Jar) {
+        from sourceSets.main.allJava
+        classifier = 'sources'
+    }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-            artifact sourcesJar
-            artifact javadocJar
+    task javadocJar(type: Jar) {
+        from javadoc
+        classifier = 'javadoc'
+    }
+
+    javadoc {
+        if (JavaVersion.current().isJava9Compatible()) {
+            options.addBooleanOption('html5', true)
         }
     }
-    repositories {
-        maven {
-            url = version.endsWith('SNAPSHOT') ? 'https://artifactory.netifiinc.com/artifactory/libs-snapshot-local' : 'https://artifactory.netifiinc.com/artifactory/libs-release-local'
-            credentials {
-                username = project.findProperty('netifiArtifactoryUsername') ?: System.getenv('NETIFI_ARTIFACTORY_USERNAME')
-                password = project.findProperty('netifiArtifactoryPassword') ?: System.getenv('NETIFI_ARTIFACTORY_PASSWORD')
+
+    plugins.withId('maven-publish') {
+        publishing {
+            publications {
+                mavenJava(MavenPublication) {
+                    from components.java
+                    artifact sourcesJar
+                    artifact javadocJar
+                }
+            }
+            repositories {
+                maven {
+                    url = version.endsWith('SNAPSHOT') ? 'https://artifactory.netifiinc.com/artifactory/libs-snapshot-local' : 'https://artifactory.netifiinc.com/artifactory/libs-release-local'
+                    credentials {
+                        username = project.findProperty('netifiArtifactoryUsername') ?: System.getenv('NETIFI_ARTIFACTORY_USERNAME')
+                        password = project.findProperty('netifiArtifactoryPassword') ?: System.getenv('NETIFI_ARTIFACTORY_PASSWORD')
+                    }
+                }
             }
         }
-    }
-}
-
-javadoc {
-    if(JavaVersion.current().isJava9Compatible()) {
-        options.addBooleanOption('html5', true)
     }
 }

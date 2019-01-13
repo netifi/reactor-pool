@@ -1,0 +1,11 @@
+plugins {
+    id 'maven-publish'
+}
+
+dependencies {
+    api "io.projectreactor:reactor-core:$reactorExtraVersion"
+    //api "io.projectreactor.addons:reactor-extra:$reactorExtraVersion"
+    //TODO shade
+    implementation "io.netty:netty-common:$nettyVersion"
+    implementation "org.slf4j:slf4j-api:$slf4jVersion"
+}
