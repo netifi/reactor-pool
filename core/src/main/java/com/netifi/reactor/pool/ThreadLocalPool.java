@@ -8,6 +8,7 @@ import reactor.core.publisher.MonoSink;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -16,14 +17,14 @@ import java.util.function.Function;
 
 public class ThreadLocalPool<T> extends AtomicBoolean implements Pool<T> {
     private static final Logger logger = LoggerFactory.getLogger(ThreadLocalPool.class);
-    private static final int SINKS_SIZE = 2000;
+    private static final int PENDING_SINKS_SIZE = 2000;
     private static final Throwable CLOSED = new PoolClosedException();
     private static final ThreadLocal<
             Map<ThreadLocalPool,
                     Pool>> threadLocalPools =
             ThreadLocal.withInitial(HashMap::new);
-    final Queue<Pool<T>> pools = new ConcurrentLinkedQueue<>();
-    final Queue<MonoSink<Mono<Member<T>>>> sinks = new MpscArrayQueue<>(SINKS_SIZE);
+    private final Queue<Pool<T>> pools = new ConcurrentLinkedQueue<>();
+    private final Queue<MonoSink<Mono<Member<T>>>> sinks;
 
     private final PoolFactory<T> poolFactory;
     private static final AtomicIntegerFieldUpdater<ThreadLocalPool> WIP =
@@ -31,7 +32,13 @@ public class ThreadLocalPool<T> extends AtomicBoolean implements Pool<T> {
     private volatile int wip;
 
     public ThreadLocalPool(PoolFactory<T> poolFactory) {
-        this.poolFactory = poolFactory;
+        this(poolFactory, PENDING_SINKS_SIZE);
+    }
+
+    public ThreadLocalPool(PoolFactory<T> poolFactory,
+                           int pendingMembersRequestLimit) {
+        this.poolFactory = Objects.requireNonNull(poolFactory);
+        this.sinks = new MpscArrayQueue<>(Utils.requirePositive(pendingMembersRequestLimit));
     }
 
     @Override
@@ -40,7 +47,7 @@ public class ThreadLocalPool<T> extends AtomicBoolean implements Pool<T> {
             if (sinks.offer(s)) {
                 drain();
             } else {
-                s.error(new PoolRequestsLimitException(SINKS_SIZE));
+                s.error(new PoolRequestsLimitException(PENDING_SINKS_SIZE));
             }
         }).flatMap(Function.identity());
     }

@@ -37,9 +37,9 @@ public class NonBlockingPool<T> extends AtomicBoolean implements Pool<T> {
                            Duration pooledValidationInterval,
                            Duration pooledTimeout,
                            PoolManager<T> poolManager) {
-        requirePositive(poolSize);
+        Utils.requirePositive(poolSize);
         this.pooledTimeout = Objects.requireNonNull(pooledTimeout);
-        this.maxPendingRequestsCount = requirePositive(maxPendingRequestsCount);
+        this.maxPendingRequestsCount = Utils.requirePositive(maxPendingRequestsCount);
         this.pooledValidationInterval = Objects
                 .requireNonNull(pooledValidationInterval)
                 .toMillis();
@@ -130,15 +130,6 @@ public class NonBlockingPool<T> extends AtomicBoolean implements Pool<T> {
         CONNECTED,
         CONNECTING,
         CLOSED
-    }
-
-    private static int requirePositive(int size) {
-        if (size > 0) {
-            return size;
-        } else {
-            throw new IllegalArgumentException(
-                    String.format("Must be positive: %d", size));
-        }
     }
 
     private class InnerMember extends AtomicBoolean implements Member<T> {
