@@ -1,7 +1,6 @@
 package com.netifi.reactor.pool;
 
 import io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueue;
-import io.netty.util.internal.shaded.org.jctools.util.Pow2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
@@ -38,8 +37,11 @@ public class ThreadLocalPool<T> extends AtomicBoolean implements Pool<T> {
     @Override
     public Mono<Member<T>> member() {
         return Mono.<Mono<Member<T>>>create(s -> {
-            sinks.offer(s);
-            drain();
+            if (sinks.offer(s)) {
+                drain();
+            } else {
+                s.error(new PoolRequestsLimitException(SINKS_SIZE));
+            }
         }).flatMap(Function.identity());
     }
 
