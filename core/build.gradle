@@ -4,8 +4,7 @@ plugins {
 
 dependencies {
     api "io.projectreactor:reactor-core:$reactorExtraVersion"
-    //api "io.projectreactor.addons:reactor-extra:$reactorExtraVersion"
-    //TODO shade
+    //TODO shade, used for repackaged jctools collections
     implementation "io.netty:netty-common:$nettyVersion"
     implementation "org.slf4j:slf4j-api:$slf4jVersion"
 }

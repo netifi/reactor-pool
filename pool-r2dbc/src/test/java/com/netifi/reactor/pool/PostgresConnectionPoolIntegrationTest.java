@@ -6,13 +6,17 @@ import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
@@ -22,13 +26,19 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class PostgresConnectionPoolIntegrationTest {
-
+    private static final Logger logger = LoggerFactory
+            .getLogger(PostgresConnectionPoolIntegrationTest.class);
     private static final int POOL_SIZE = 5;
     private static final int MAX_PENDING_REQUESTS_COUNT = 1500;
     private static final Duration POOLED_VALIDATION_INTERVAL = Duration.ofSeconds(5);
     private static final Duration POOLED_TIMEOUT = Duration.ofSeconds(1);
 
     private final PostgreSQLContainer postgreSQLContainer = new PostgreSQLContainer();
+
+    @BeforeAll
+    static void init() {
+        Hooks.onNextDropped(PoolUtils::checkinMember);
+    }
 
     @BeforeEach
     void setUp() {
@@ -67,6 +77,7 @@ public class PostgresConnectionPoolIntegrationTest {
                 .timeout(Duration.ofSeconds(5))
                 .take(Duration.ofSeconds(60))
                 .then()
+                .doFinally(s -> close(pool))
                 .as(StepVerifier::create)
                 .expectComplete()
                 .verify();
@@ -116,6 +127,14 @@ public class PostgresConnectionPoolIntegrationTest {
                 .as(StepVerifier::create)
                 .expectComplete()
                 .verify();
+    }
+
+    private static void close(Pool<PostgresqlConnection> pool) {
+        try {
+            pool.close();
+        } catch (Exception e) {
+            logger.error("Error closing pool", e);
+        }
     }
 
     @NotNull

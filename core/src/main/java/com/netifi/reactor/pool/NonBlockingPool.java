@@ -24,9 +24,9 @@ public class NonBlockingPool<T> extends AtomicBoolean implements Pool<T> {
 
     private static final AtomicIntegerFieldUpdater<NonBlockingPool> WIP =
             AtomicIntegerFieldUpdater.newUpdater(NonBlockingPool.class, "wip");
+    private volatile int wip;
     final Queue<InnerMember> members;
     private final Queue<MonoSink<Mono<InnerMember>>> sinks;
-    private volatile int wip;
     private final long pooledValidationInterval;
     private final PoolManager<T> poolManager;
     private final int maxPendingRequestsCount;

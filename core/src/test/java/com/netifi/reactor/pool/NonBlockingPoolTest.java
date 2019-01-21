@@ -1,10 +1,9 @@
 package com.netifi.reactor.pool;
 
 import com.netifi.reactor.pool.TestPoolManager.Resource;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -17,6 +16,11 @@ public class NonBlockingPoolTest {
     private static final Duration POOLED_TIMEOUT = Duration.ofSeconds(1);
     private NonBlockingPool<Resource> pool;
 
+    @BeforeAll
+    static void init() {
+        Hooks.onNextDropped(PoolUtils::checkinMember);
+    }
+
     @BeforeEach
     void setUp() {
         pool = new NonBlockingPool<>(POOL_SIZE,
@@ -25,6 +29,11 @@ public class NonBlockingPoolTest {
                 POOLED_TIMEOUT,
                 new TestPoolManager());
 
+    }
+
+    @AfterEach
+    void tearDown() {
+        pool.close();
     }
 
     @Test
