@@ -1,8 +1,17 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4"
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.8.1"
+    }
+}
+
 subprojects {
     apply plugin: 'java-library'
-
-    group = 'com.netifi.reactor.pool'
-    version = '0.0.1'
 
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
@@ -35,6 +44,13 @@ subprojects {
 
     test {
         useJUnitPlatform()
+    }
+
+    tasks.withType(Test) {
+        testLogging {
+            exceptionFormat "full"
+            events "started", "skipped", "passed", "failed"
+        }
     }
 
     task sourcesJar(type: Jar) {
@@ -74,3 +90,4 @@ subprojects {
         }
     }
 }
+apply from: "artifactory.gradle"

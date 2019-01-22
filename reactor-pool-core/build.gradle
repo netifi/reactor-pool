@@ -1,10 +1,11 @@
 plugins {
     id 'maven-publish'
+    id 'com.jfrog.artifactory'
 }
 
 dependencies {
     api "io.projectreactor:reactor-core:$reactorExtraVersion"
+    api "org.slf4j:slf4j-api:$slf4jVersion"
     //TODO shade, used for repackaged jctools collections
     implementation "io.netty:netty-common:$nettyVersion"
-    implementation "org.slf4j:slf4j-api:$slf4jVersion"
 }

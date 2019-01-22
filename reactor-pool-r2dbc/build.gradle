@@ -1,8 +1,9 @@
 plugins {
-    id "maven-publish"
+    id 'maven-publish'
+    id 'com.jfrog.artifactory'
 }
 dependencies {
-    api project(":core")
+    api project(":reactor-pool-core")
     api "io.r2dbc:r2dbc-spi:$r2dbcVersion"
 
     testImplementation "io.r2dbc:r2dbc-postgresql:$r2dbcVersion"
