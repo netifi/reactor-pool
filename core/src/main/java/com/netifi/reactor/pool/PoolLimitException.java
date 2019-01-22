@@ -1,12 +1,12 @@
 package com.netifi.reactor.pool;
 
-public class PoolRequestsLimitException extends RuntimeException {
+public class PoolLimitException extends RuntimeException {
     private static final long serialVersionUID = -6902751635600001222L;
 
-    public PoolRequestsLimitException() {
+    public PoolLimitException() {
     }
 
-    public PoolRequestsLimitException(int limit) {
+    public PoolLimitException(int limit) {
         super("Requests limit exceeded: " + limit);
     }
 }

@@ -72,7 +72,7 @@ public class NonBlockingPool<T> extends AtomicBoolean implements Pool<T> {
                         drain();
                     } else {
                         sink.error(
-                                new PoolRequestsLimitException(
+                                new PoolLimitException(
                                         maxPendingRequestsCount));
                     }
                 })
@@ -99,6 +99,8 @@ public class NonBlockingPool<T> extends AtomicBoolean implements Pool<T> {
                         InnerMember member = members.poll();
                         member.disposeValue();
                     }
+                    poolManager.dispose();
+
                 } else {
                     while (!sinks.isEmpty() && !members.isEmpty()) {
                         MonoSink<Mono<InnerMember>> sink = sinks.poll();

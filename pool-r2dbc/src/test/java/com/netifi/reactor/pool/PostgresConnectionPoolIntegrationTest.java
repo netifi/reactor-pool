@@ -72,7 +72,9 @@ public class PostgresConnectionPoolIntegrationTest {
                 .onBackpressureDrop()
                 .parallel(Runtime.getRuntime().availableProcessors())
                 .runOn(Schedulers.elastic())
-                .flatMap(v -> queryThenCheckin)
+                .flatMap(v -> queryThenCheckin,
+                        false,
+                        MAX_PENDING_REQUESTS_COUNT * 3 / 4)
                 .sequential()
                 .timeout(Duration.ofSeconds(5))
                 .take(Duration.ofSeconds(60))
@@ -152,7 +154,7 @@ public class PostgresConnectionPoolIntegrationTest {
                         POOLED_TIMEOUT,
                         poolManager);
 
-        return new ThreadLocalPool<>(poolFactory);
+        return new PartitionedThreadPool<>(poolFactory);
     }
 
     @NotNull

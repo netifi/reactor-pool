@@ -120,7 +120,7 @@ public class NonBlockingPoolTest {
                 POOLED_TIMEOUT,
                 new TestPoolManager());
         Mono<Member<Resource>> m = pool.member();
-        Assertions.assertThrows(PoolRequestsLimitException.class,
+        Assertions.assertThrows(PoolLimitException.class,
                 () -> Flux.merge(m, m, m).blockLast());
     }
 }
