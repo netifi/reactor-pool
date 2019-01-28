@@ -6,6 +6,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.testcontainers.containers.PostgreSQLContainer;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
@@ -64,6 +65,13 @@ class BaseTest {
                         false,
                         MAX_PENDING_REQUESTS_COUNT / 2)
                 .sequential()
+                .onErrorResume(err -> {
+                    if (err instanceof PoolLimitException) {
+                        return Mono.empty();
+                    } else {
+                        return Mono.error(err);
+                    }
+                })
                 .timeout(Duration.ofSeconds(5))
                 .take(Duration.ofSeconds(60))
                 .then()
