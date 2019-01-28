@@ -74,6 +74,7 @@ public class PartitionedThreadPool<T> extends AtomicBoolean implements Pool<T> {
         if (pool == null) {
             pool = poolFactory.create();
             if (pools.offer(pool)) {
+                logger.info("Create pool for thread: {}", Thread.currentThread());
                 innerPools.set(pool);
                 drain();
             } else {

@@ -5,9 +5,7 @@ import io.r2dbc.postgresql.PostgresqlConnection;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -25,29 +23,13 @@ import java.time.Duration;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-public class PostgresConnectionPoolIntegrationTest {
+public class PostgresConnectionPoolTest extends BaseTest {
     private static final Logger logger = LoggerFactory
-            .getLogger(PostgresConnectionPoolIntegrationTest.class);
-    private static final int POOL_SIZE = 5;
-    private static final int MAX_PENDING_REQUESTS_COUNT = 1500;
-    private static final Duration POOLED_VALIDATION_INTERVAL = Duration.ofSeconds(5);
-    private static final Duration POOLED_TIMEOUT = Duration.ofSeconds(1);
-
-    private final PostgreSQLContainer postgreSQLContainer = new PostgreSQLContainer();
+            .getLogger(PostgresConnectionPoolTest.class);
 
     @BeforeAll
     static void init() {
         Hooks.onNextDropped(PoolUtils::checkinMember);
-    }
-
-    @BeforeEach
-    void setUp() {
-        postgreSQLContainer.start();
-    }
-
-    @AfterEach
-    void tearDown() {
-        postgreSQLContainer.stop();
     }
 
     @ParameterizedTest
@@ -68,21 +50,7 @@ public class PostgresConnectionPoolIntegrationTest {
                                 .doFinally(s -> m.checkin())
                 );
 
-        Flux.interval(Duration.ofMillis(1))
-                .onBackpressureDrop()
-                .parallel(Runtime.getRuntime().availableProcessors())
-                .runOn(Schedulers.elastic())
-                .flatMap(v -> queryThenCheckin,
-                        false,
-                        MAX_PENDING_REQUESTS_COUNT * 3 / 4)
-                .sequential()
-                .timeout(Duration.ofSeconds(5))
-                .take(Duration.ofSeconds(60))
-                .then()
-                .doFinally(s -> close(pool))
-                .as(StepVerifier::create)
-                .expectComplete()
-                .verify();
+        runAndVerify(queryThenCheckin, () -> close(pool));
     }
 
     static Stream<Arguments> poolsProvider() {
@@ -94,7 +62,7 @@ public class PostgresConnectionPoolIntegrationTest {
 
         Function<PostgreSQLContainer, Pool<PostgresqlConnection>> threadLocalPool =
                 container ->
-                        createThreadLocalPool(
+                        createPartitionedPool(
                                 validPostgresConfig(container));
 
         return Stream.of(
@@ -140,7 +108,7 @@ public class PostgresConnectionPoolIntegrationTest {
     }
 
     @NotNull
-    private static Pool<PostgresqlConnection> createThreadLocalPool(
+    private static Pool<PostgresqlConnection> createPartitionedPool(
             PostgresqlConnectionConfiguration config) {
         PostgresqlConnectionFactory connectionFactory =
                 new PostgresqlConnectionFactory(config);
@@ -169,30 +137,5 @@ public class PostgresConnectionPoolIntegrationTest {
                 POOLED_VALIDATION_INTERVAL,
                 POOLED_TIMEOUT,
                 poolManager);
-    }
-
-    @NotNull
-    private PostgresqlConnectionConfiguration invalidPostgresConfig() {
-        return PostgresqlConnectionConfiguration.builder()
-                .applicationName("test")
-                .database("invalid")
-                .host("localhost")
-                .port(5433)
-                .username("invalid")
-                .password("invalid")
-                .build();
-    }
-
-    private static PostgresqlConnectionConfiguration validPostgresConfig(
-            PostgreSQLContainer container) {
-        JdbcUrlParser.Url url = JdbcUrlParser.parse(container.getJdbcUrl());
-        return PostgresqlConnectionConfiguration.builder()
-                .applicationName("test")
-                .database(url.getPath())
-                .host(url.getHost())
-                .port(url.getPort())
-                .username(container.getUsername())
-                .password(container.getPassword())
-                .build();
     }
 }
