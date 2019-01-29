@@ -6,13 +6,18 @@ import com.netifi.reactor.pool.r2dbc.RdbcPoolUtils;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import io.r2dbc.spi.Connection;
+import io.r2dbc.spi.IsolationLevel;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.function.Function;
 
 public class PostgresConnectionPoolFactoryTest extends BaseTest {
 
@@ -25,7 +30,9 @@ public class PostgresConnectionPoolFactoryTest extends BaseTest {
     void poolConnections() {
         CloseableConnectionFactory connectionFactory = pooledConnectionFactory();
         Mono<? extends Connection> connF =
-                Mono.defer(() -> Mono.from(connectionFactory.create()));
+                Mono.defer(
+                        () -> Mono.from(connectionFactory.create())
+                );
         Flux<Integer> queryThenCheckin = connF
                 .flatMapMany(
                         c -> Flux.from(c.createStatement("select 1 c")
@@ -39,6 +46,70 @@ public class PostgresConnectionPoolFactoryTest extends BaseTest {
                 );
 
         runAndVerify(queryThenCheckin, connectionFactory::close);
+    }
+
+    @Test
+    void pooledConnectionAfterClose() {
+        CloseableConnectionFactory connectionFactory = pooledConnectionFactory();
+        Connection connection = Mono.from(connectionFactory.create()).block();
+        Mono.from(connection.close()).subscribe();
+        connectionCalls()
+                .forEach(call ->
+                        Flux.from(call.apply(connection))
+                                .doFinally(s -> connectionFactory.close())
+                                .as(StepVerifier::create)
+                                .expectError(PoolClosedException.class)
+                                .verify(Duration.ofSeconds(5)));
+    }
+
+    static Iterable<Function<Connection, Publisher<?>>> connectionCalls() {
+
+        Function<Connection, Publisher<?>> createStatement =
+                connection ->
+                        Mono.fromRunnable(() -> connection
+                                .createStatement("select 1 c"));
+
+        Function<Connection, Publisher<?>> createBatch =
+                connection ->
+                        Mono.fromRunnable(connection::createBatch);
+
+        Function<Connection, Publisher<?>> savePoint =
+                connection ->
+                        connection.createSavepoint("test");
+
+        Function<Connection, Publisher<?>> releaseSavepoint =
+                connection ->
+                        connection.releaseSavepoint("test");
+
+        Function<Connection, Publisher<?>> beginTransaction =
+                Connection::beginTransaction;
+
+        Function<Connection, Publisher<?>> commitTransaction =
+                Connection::commitTransaction;
+
+        Function<Connection, Publisher<?>> rollbackTransaction =
+                Connection::rollbackTransaction;
+
+        Function<Connection, Publisher<?>> transactionIsolationLevel =
+                connection ->
+                        connection.setTransactionIsolationLevel(
+                                IsolationLevel.READ_COMMITTED);
+
+        Function<Connection, Publisher<?>> rollbackTransactionToSavepoint =
+                connection ->
+                        connection.rollbackTransactionToSavepoint("test");
+
+        return Arrays.asList(
+                createStatement,
+                createBatch,
+                savePoint,
+                releaseSavepoint,
+                beginTransaction,
+                commitTransaction,
+                rollbackTransaction,
+                transactionIsolationLevel,
+                rollbackTransactionToSavepoint
+        );
     }
 
     private CloseableConnectionFactory pooledConnectionFactory() {

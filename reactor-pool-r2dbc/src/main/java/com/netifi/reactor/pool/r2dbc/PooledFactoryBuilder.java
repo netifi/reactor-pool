@@ -1,6 +1,5 @@
 package com.netifi.reactor.pool.r2dbc;
 
-import com.netifi.reactor.pool.NonBlockingPool;
 import com.netifi.reactor.pool.NonBlockingPoolFactory;
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactory;

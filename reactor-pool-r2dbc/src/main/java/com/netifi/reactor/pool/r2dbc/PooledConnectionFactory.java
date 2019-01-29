@@ -13,8 +13,7 @@ public class PooledConnectionFactory<T extends Connection> implements CloseableC
     public PooledConnectionFactory(ConnectionFactory connectionFactory,
                                    Function<ConnectionFactory, PoolFactory<T>> f) {
         this.connectionFactory = connectionFactory;
-        PoolFactory<T> poolFactory = f.apply(connectionFactory);
-        this.pool = new PartitionedThreadPool<>(poolFactory);
+        this.pool = new PartitionedThreadPool<>(f.apply(connectionFactory));
     }
 
     @Override
@@ -27,12 +26,12 @@ public class PooledConnectionFactory<T extends Connection> implements CloseableC
         return connectionFactory.getMetadata();
     }
 
-    public static <T extends Connection> PooledFactoryBuilder<T> builder() {
-        return new PooledFactoryBuilder<>();
-    }
-
     @Override
     public void close() {
         pool.close();
+    }
+
+    public static <T extends Connection> PooledFactoryBuilder<T> builder() {
+        return new PooledFactoryBuilder<>();
     }
 }
