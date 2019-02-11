@@ -1,0 +1,13 @@
+plugins {
+    id 'maven-publish'
+    id 'com.jfrog.artifactory'
+}
+dependencies {
+    api project(":reactor-pool-core")
+    api "io.r2dbc:r2dbc-spi:$r2dbcVersion"
+
+    testImplementation "io.r2dbc:r2dbc-postgresql:$r2dbcVersion"
+    testImplementation "org.testcontainers:testcontainers:$testcontainersVersion"
+    testImplementation "org.testcontainers:postgresql:$testcontainersVersion"
+    testImplementation "org.slf4j:slf4j-simple:$slf4jVersion"
+}
