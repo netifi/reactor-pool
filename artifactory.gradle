@@ -26,8 +26,12 @@ if (project.hasProperty('netifiArtifactoryUsername') && project.hasProperty('net
                         repoKey = version.contains('SNAPSHOT') ? 'libs-snapshot-local' : 'libs-release-local'
 
                         // Credentials for oss.jfrog.org are a user's Bintray credentials
-                        username = project.property('netifiArtifactoryUsername')
-                        password = project.property('netifiArtifactoryPassword')
+                        username = project.hasProperty('netifiArtifactoryUsername')
+                                ? project.property('netifiArtifactoryUsername')
+                                : System.getenv('NETIFI_ARTIFACTORY_USERNAME')
+                        password = project.hasProperty('netifiArtifactoryPassword')
+                                ? project.property('netifiArtifactoryPassword')
+                                : System.getenv('NETIFI_ARTIFACTORY_PASSWORD')
                     }
 
                     defaults {
