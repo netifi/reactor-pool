@@ -105,9 +105,9 @@ public class NonBlockingPool<T> extends AtomicBoolean implements Pool<T> {
                     while (!sinks.isEmpty() && !members.isEmpty()) {
                         MonoSink<Mono<InnerMember>> sink = sinks.poll();
                         InnerMember member = members.poll();
-                        if (logger.isInfoEnabled()) {
+                        if (logger.isDebugEnabled()) {
                             int size = members.size();
-                            logger.info("Checking out member. Current size: {}", size);
+                            logger.debug("Checking out member. Current size: {}", size);
                         }
                         sink.success(member.checkout());
                     }
@@ -256,8 +256,8 @@ public class NonBlockingPool<T> extends AtomicBoolean implements Pool<T> {
         @Override
         public void checkin() {
             if (checkedOut.compareAndSet(true, false)) {
-                if (logger.isInfoEnabled()) {
-                    logger.info("Checking in member. Current size: {}", members.size());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Checking in member. Current size: {}", members.size());
                 }
                 members.offer(this);
                 drain();
