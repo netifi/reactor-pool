@@ -1,15 +1,3 @@
-buildscript {
-    repositories {
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-    }
-    dependencies {
-        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4"
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.8.1"
-    }
-}
-
 subprojects {
     apply plugin: 'java-library'
 
@@ -27,11 +15,27 @@ subprojects {
     }
 
     repositories {
-        mavenCentral()
         maven {
-            url = 'https://repo.spring.io/milestone'
+            url 'https://sonatype.netifiinc.com/repository/maven-central/'
+            credentials {
+                username = "${netifiReadOnlyUsername}"
+                password = "${netifiReadOnlyPassword}"
+            }
         }
-        jcenter()
+        maven {
+            url 'https://sonatype.netifiinc.com/repository/spring-milestone/'
+            credentials {
+                username = "${netifiReadOnlyUsername}"
+                password = "${netifiReadOnlyPassword}"
+            }
+        }
+        maven {
+            url 'https://sonatype.netifiinc.com/repository/jcenter/'
+            credentials {
+                username = "${netifiReadOnlyUsername}"
+                password = "${netifiReadOnlyPassword}"
+            }
+        }
     }
 
     dependencies {
@@ -80,10 +84,12 @@ subprojects {
             }
             repositories {
                 maven {
-                    url = version.endsWith('SNAPSHOT') ? 'https://artifactory.netifiinc.com/artifactory/libs-snapshot-local' : 'https://artifactory.netifiinc.com/artifactory/libs-release-local'
+                    def releasesRepoUrl = 'https://sonatype.netifiinc.com/repository/netifi-maven-releases/'
+                    def snapshotsRepoUrl = 'https://sonatype.netifiinc.com/repository/netifi-maven-snapshots/'
+                    url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
                     credentials {
-                        username = project.findProperty('netifiArtifactoryUsername') ?: System.getenv('NETIFI_ARTIFACTORY_USERNAME')
-                        password = project.findProperty('netifiArtifactoryPassword') ?: System.getenv('NETIFI_ARTIFACTORY_PASSWORD')
+                        username = "${netifiPublishUsername}"
+                        password = "${netifiPublishPassword}"
                     }
                 }
             }
